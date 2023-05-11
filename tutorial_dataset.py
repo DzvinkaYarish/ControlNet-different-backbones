@@ -4,11 +4,15 @@ import numpy as np
 
 from torch.utils.data import Dataset
 
+import os
+
+ROOT = "/gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/"
+
 
 class MyDataset(Dataset):
     def __init__(self):
         self.data = []
-        with open('./training/fill50k/prompt.json', 'rt') as f:
+        with open(os.path.join(ROOT, 'data/fill50k/prompt.json'), 'rt') as f:
             for line in f:
                 self.data.append(json.loads(line))
 
@@ -22,8 +26,8 @@ class MyDataset(Dataset):
         target_filename = item['target']
         prompt = item['prompt']
 
-        source = cv2.imread('./training/fill50k/' + source_filename)
-        target = cv2.imread('./training/fill50k/' + target_filename)
+        source = cv2.imread(os.path.join(ROOT, 'data/fill50k/', source_filename))
+        target = cv2.imread(os.path.join(ROOT, 'data/fill50k/', target_filename))
 
         # Do not forget that OpenCV read images in BGR order.
         source = cv2.cvtColor(source, cv2.COLOR_BGR2RGB)
