@@ -12,7 +12,7 @@ import os
 # Configs
 ROOT = "/gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/"
 # ROOT = "./"
-resume_path = os.path.join(ROOT, 'models/control_lite_ini.ckpt')
+resume_path = os.path.join(ROOT, 'models/control_lite_conv_ini.ckpt')
 exp_path = os.path.join(ROOT, 'experiments/fillin50K_lite_conv_lr_1e-4/')
 batch_size = 8
 logger_freq = 300
