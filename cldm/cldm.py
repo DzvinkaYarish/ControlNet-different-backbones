@@ -95,10 +95,10 @@ class ControlNet(nn.Module):
         if num_head_channels == -1:
             assert num_heads != -1, 'Either num_heads or num_head_channels has to be set'
 
-        self.dims = dims
-        self.image_size = image_size
-        self.in_channels = in_channels
-        self.model_channels = model_channels
+        self.dims = dims # 2
+        self.image_size = image_size # 32
+        self.in_channels = in_channels # 4
+        self.model_channels = model_channels # 320
         if isinstance(num_res_blocks, int):
             self.num_res_blocks = len(channel_mult) * [num_res_blocks]
         else:
@@ -125,10 +125,10 @@ class ControlNet(nn.Module):
         self.dtype = th.float16 if use_fp16 else th.float32
         self.num_heads = num_heads
         self.num_head_channels = num_head_channels
-        self.num_heads_upsample = num_heads_upsample
+        self.num_heads_upsample = num_heads_upsample # 8
         self.predict_codebook_ids = n_embed is not None
 
-        time_embed_dim = model_channels * 4
+        time_embed_dim = model_channels * 4 # 1280
         self.time_embed = nn.Sequential(
             linear(model_channels, time_embed_dim),
             nn.SiLU(),
@@ -284,7 +284,6 @@ class ControlNet(nn.Module):
     def forward(self, x, hint, timesteps, context, **kwargs):
         t_emb = timestep_embedding(timesteps, self.model_channels, repeat_only=False)
         emb = self.time_embed(t_emb)
-
         guided_hint = self.input_hint_block(hint, emb, context)
 
         outs = []

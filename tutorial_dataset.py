@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 import os
 
 ROOT = "/gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/"
+# ROOT = "./"
 
 
 class MyDataset(Dataset):
@@ -14,7 +15,9 @@ class MyDataset(Dataset):
         self.data = []
         with open(os.path.join(ROOT, 'data/fill50k/prompt.json'), 'rt') as f:
             for line in f:
-                self.data.append(json.loads(line))
+                d = json.loads(line)
+                if d['source'].split('/')[1].split('.')[0].startswith('200'):
+                    self.data.append(json.loads(line))
 
     def __len__(self):
         return len(self.data)

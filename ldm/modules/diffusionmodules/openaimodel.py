@@ -469,6 +469,7 @@ class UNetModel(nn.Module):
         num_attention_blocks=None,
         disable_middle_self_attn=False,
         use_linear_in_transformer=False,
+        control_lite=False,
     ):
         super().__init__()
         if use_spatial_transformer:
@@ -522,6 +523,7 @@ class UNetModel(nn.Module):
         self.num_head_channels = num_head_channels
         self.num_heads_upsample = num_heads_upsample
         self.predict_codebook_ids = n_embed is not None
+        self.control_lite = control_lite
 
         time_embed_dim = model_channels * 4
         self.time_embed = nn.Sequential(
@@ -628,11 +630,13 @@ class UNetModel(nn.Module):
         if legacy:
             #num_heads = 1
             dim_head = ch // num_heads if use_spatial_transformer else num_head_channels
+
         self.middle_block = TimestepEmbedSequential(
             ResBlock(
                 ch,
                 time_embed_dim,
                 dropout,
+                out_channels=ch,
                 dims=dims,
                 use_checkpoint=use_checkpoint,
                 use_scale_shift_norm=use_scale_shift_norm,

@@ -18,10 +18,11 @@ model:
     use_ema: False
     only_mid_control: False
 
+
     control_stage_config:
-      target: cldm.cldm.ControlNet
+      target: cldm.cldm_lite.ControlLiteNet
       params:
-        image_size: 32 # unused
+        image_size: 64
         in_channels: 4
         hint_channels: 3
         model_channels: 320
@@ -34,11 +35,12 @@ model:
         context_dim: 768
         use_checkpoint: True
         legacy: False
+        control_type: 'conv'
 
     unet_config:
-      target: cldm.cldm.ControlledUnetModel
+      target: cldm.cldm_lite.ControlledLiteUnetModel
       params:
-        image_size: 32 # unused
+        image_size: 64
         in_channels: 4
         out_channels: 4
         model_channels: 320
@@ -51,6 +53,7 @@ model:
         context_dim: 768
         use_checkpoint: True
         legacy: False
+        control_lite: True
 
     first_stage_config:
       target: ldm.models.autoencoder.AutoencoderKL
@@ -78,4 +81,4 @@ model:
     cond_stage_config:
       target: ldm.modules.encoders.modules.FrozenCLIPEmbedder
       params:
-        device: cpu
+        device: cuda
