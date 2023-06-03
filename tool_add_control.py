@@ -26,31 +26,14 @@ def get_node_name(name, parent_name):
     return True, name[len(parent_name):]
 
 
-model = create_model(config_path='./models/cldm_lite.yaml')
+#model = create_model(config_path='./models/cldm_lite.yaml')
+model = create_model(config_path='./models/cldm_v15.yaml')
 
 pretrained_weights = torch.load(input_path)
 if 'state_dict' in pretrained_weights:
     pretrained_weights = pretrained_weights['state_dict']
 
 scratch_dict = model.state_dict()
-
-#
-# for l in list(model.control_model.named_parameters()):
-#     print(l[0], ':', l[1].detach().numpy().shape)
-
-
-print("######################################################3")
-
-# for l in list(model.model.diffusion_model.named_parameters()):
-#     print(l[0], ':', l[1].detach().numpy().shape)
-
-
-# for k in pretrained_weights.keys():
-#     if k.startswith('model.diffusion_model.output_blocks'):
-#         print(k, end=': ')
-#         print(pretrained_weights[k].shape)
-
-# print(pretrained_weights.keys())
 
 target_dict = {}
 for k in scratch_dict.keys():
