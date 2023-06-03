@@ -162,7 +162,7 @@ class ControlLiteNet(nn.Module):
         self.zero_convs = nn.ModuleList([])
 
         if self.control_type == 'mlp':
-            self.init_mlp()
+            self.init_mlp_2()
         elif self.control_type == 'conv':
             self.init_conv()
 

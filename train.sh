@@ -15,6 +15,6 @@ nvidia-smi
 
 gcc --version
 
-#/gpfs/space/home/dzvenymy/.conda/envs/controlnet/bin/python tool_add_control.py /gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/models/v1-5-pruned.ckpt /gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/models/control_sd15_ini.ckpt
+#/gpfs/space/home/dzvenymy/.conda/envs/controlnet/bin/python tool_add_control.py /gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/models/v1-5-pruned.ckpt /gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/models/control_lite_ini.ckpt
 
 /gpfs/space/home/dzvenymy/.conda/envs/controlnet/bin/python tutorial_train.py

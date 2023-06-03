@@ -35,7 +35,7 @@ model:
         context_dim: 768
         use_checkpoint: True
         legacy: False
-        control_type: 'conv'
+        control_type: 'mlp'
 
     unet_config:
       target: cldm.cldm_lite.ControlledLiteUnetModel
@@ -81,4 +81,4 @@ model:
     cond_stage_config:
       target: ldm.modules.encoders.modules.FrozenCLIPEmbedder
       params:
-        device: cuda
+        device: cpu
