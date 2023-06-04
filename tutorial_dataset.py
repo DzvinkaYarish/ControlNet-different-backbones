@@ -7,8 +7,8 @@ from torch.utils.data import Dataset
 import os
 from annotator.util import HWC3, resize_image
 
-# ROOT = "/gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/"
-ROOT = "./"
+ROOT = "/gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/"
+#ROOT = "./"
 
 class MyDataset(Dataset):
     def __init__(self):
@@ -31,6 +31,7 @@ class MyDataset(Dataset):
 
         source = cv2.imread(os.path.join(ROOT, 'data/fill50k/', source_filename))
         target = cv2.imread(os.path.join(ROOT, 'data/fill50k/', target_filename))
+
         source = resize_image(source, 256)
         target = resize_image(target, 256)
 
@@ -52,7 +53,7 @@ class ValDataset(Dataset):
         self.data = []
         # for ds in ['things', 'laion-art','cc3m']:
         for ds in ['fill50k']:
-            with open(os.path.join(ROOT, 'data/', ds, 'val_data_test.json'), 'rt') as f:
+            with open(os.path.join(ROOT, 'data/', ds, 'val_data.json'), 'rt') as f:
                 for line in f:
                     self.data.append(json.loads(line))
 

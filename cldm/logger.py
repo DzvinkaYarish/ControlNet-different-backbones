@@ -8,6 +8,7 @@ from pytorch_lightning.callbacks import Callback
 from pytorch_lightning.utilities.distributed import rank_zero_only
 from torchmetrics.functional.multimodal import clip_score
 from annotator.util import HWC3, resize_image
+from aesthetics_predictor import AestheticsPredictor
 from functools import partial
 import cv2
 
@@ -20,7 +21,8 @@ clip_score_fn = partial(clip_score, model_name_or_path="openai/clip-vit-base-pat
 
 def calculate_clip_score(images, prompts):
     clip_score = clip_score_fn(images, prompts).detach()
-    return np.array([np.round((clip_score.numpy()), 4)])
+    clip_score = np.array([np.round((clip_score.numpy()), 4)])
+    return clip_score
 
 def rmse(x, y):
     return np.mean(np.sqrt(np.mean((x - y) ** 2, axis=1)))
@@ -40,6 +42,7 @@ class ImageLogger(Callback):
         self.log_on_batch_idx = log_on_batch_idx
         self.log_images_kwargs = log_images_kwargs if log_images_kwargs else {}
         self.log_first_step = log_first_step
+        self.aesthetics_predictor = AestheticsPredictor()
         self.val_dataloader = val_dataloader
 
         if self.val_dataloader:
@@ -109,9 +112,15 @@ class ImageLogger(Callback):
                                pl_module.global_step, pl_module.current_epoch, i)
 
             # log metrics
-            metrics = {"clip_score": [], 'edge_rmse': [], 'delta_clip_score': []}
+            metrics = {"clip_score": [], 'edge_rmse': [], 'delta_clip_score': [], 'aesthetics_score': []}
             if self.val_dataloader:
                 for i, dl_batch in enumerate(self.val_dataloader):
+                    # all_images[i]['samples_cfg_scale_9.00'] returns torch tensor of 
+                    # shape batch, 3, width, height with pixel range [0, 255] (uint8)
+                    # CLIP expects RGB batch of shape batch, 3, 256, 256 with pixel range [0, 1] normalized with 
+                    # Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
+                    # https://github.com/openai/CLIP/blob/main/clip/clip.py
+                    metrics['aesthetics_score'].append(np.mean(self.aesthetics_predictor.inference(all_images[i]['samples_cfg_scale_9.00'].float() / 255.0).cpu().detach().numpy()))
                     metrics['clip_score'].append(calculate_clip_score(all_images[i]['samples_cfg_scale_9.00'], dl_batch['txt']))
                     generated_edges = np.array([HWC3(apply_canny(img.permute(1,2,0).numpy())) for img in all_images[i]['samples_cfg_scale_9.00']])
                     metrics['edge_rmse'].append(rmse(generated_edges, dl_batch['hint'].numpy()))
@@ -119,6 +128,7 @@ class ImageLogger(Callback):
                 metrics['delta_clip_score'] = np.mean(np.concatenate(metrics['clip_score']) - np.concatenate(self.target_clip_scores))
                 metrics['clip_score'] = np.mean(metrics['clip_score'])
                 metrics['edge_rmse'] = np.mean(metrics['edge_rmse'])
+                metrics['aesthetics_score'] = np.mean(metrics['aesthetics_score'])
                 pl_module.logger.log_metrics(metrics, step=pl_module.global_step)
 
             if is_train:

@@ -147,3 +147,4 @@ dmypy.json
 
 slurm-*
 core.*
+wandb

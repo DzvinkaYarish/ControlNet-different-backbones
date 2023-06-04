@@ -53,8 +53,8 @@ class LAIONDataset(Dataset):
         target = cv2.cvtColor(target, cv2.COLOR_BGR2RGB)
 
         # Resize source and target
-        #source = resize_image(source, 512)
-        target = resize_image(target, 512)
+        #source = resize_image(source, 256)
+        target = resize_image(target, 256)
 
         # Create source (hint) image
         source = HWC3(cv2.Canny(target, self.canny_low, self.canny_high))
