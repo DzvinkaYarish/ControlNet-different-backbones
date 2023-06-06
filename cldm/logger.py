@@ -28,10 +28,11 @@ def rmse(x, y):
     return np.mean(np.sqrt(np.mean((x - y) ** 2, axis=1)))
 
 class ImageLogger(Callback):
-    def __init__(self, batch_frequency=2000, max_images=4, clamp=True, increase_log_steps=True,
+    def __init__(self, save_dir, batch_frequency=2000, max_images=4, clamp=True, increase_log_steps=True,
                  rescale=True, disabled=False, log_on_batch_idx=False, log_first_step=False,
                  log_images_kwargs=None, val_dataloader=None):
         super().__init__()
+        self.save_dir = save_dir
         self.rescale = rescale
         self.batch_freq = batch_frequency
         self.max_images = max_images
@@ -55,14 +56,14 @@ class ImageLogger(Callback):
             self.target_clip_scores.append(calculate_clip_score(target, batch['txt']))
 
     @rank_zero_only
-    def log_local(self, save_dir, split, images, global_step, current_epoch, batch_idx):
-        root = os.path.join(save_dir, "image_log", split)
+    def log_local(self, split, images, global_step, current_epoch, batch_idx):
+        root = os.path.join(self.save_dir, "image_log", split)
         ds_label = images['ds_label'][0]
         del images['ds_label']
         for k in images:
-            grid = torchvision.utils.make_grid(images[k], nrow=4)
-            if self.rescale:
-                grid = (grid + 1.0) / 2.0  # -1,1 -> 0,1; c,h,w
+            N = min(images[k].shape[0], self.max_images)
+            images_to_log = images[k][:N]
+            grid = torchvision.utils.make_grid(images_to_log, nrow=4)
             grid = grid.transpose(0, 1).transpose(1, 2).squeeze(-1)
             grid = grid.numpy()
             grid = grid.astype(np.uint8)
@@ -100,15 +101,15 @@ class ImageLogger(Callback):
             for i, images in enumerate(all_images):
                 for k in images:
                     if k != 'ds_label':
-                        N = min(images[k].shape[0], self.max_images)
-                        images[k] = images[k][:N]
                         if isinstance(images[k], torch.Tensor):
                             images[k] = images[k].detach().cpu()
                             if self.clamp:
                                 images[k] = torch.clamp(images[k], -1., 1.)
+                            if self.rescale:
+                                images[k] = (images[k] + 1.0) / 2.0  # -1,1 -> 0,1; c,h,w
                             images[k] = (images[k] * 255).to(torch.uint8)
 
-                self.log_local(pl_module.logger.save_dir, split, images,
+                self.log_local(split, images,
                                pl_module.global_step, pl_module.current_epoch, i)
 
             # log metrics

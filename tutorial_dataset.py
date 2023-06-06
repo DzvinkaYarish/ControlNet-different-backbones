@@ -10,14 +10,14 @@ from annotator.util import HWC3, resize_image
 ROOT = "/gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/"
 #ROOT = "./"
 
-class MyDataset(Dataset):
+class Fill50kDataset(Dataset):
     def __init__(self):
         self.data = []
         with open(os.path.join(ROOT, 'data/fill50k/prompt.json'), 'rt') as f:
             for line in f:
-                d = json.loads(line)
-                if d['source'].split('/')[1].split('.')[0].startswith('200'):
-                    self.data.append(json.loads(line))
+                # d = json.loads(line)
+                # if d['source'].split('/')[1].split('.')[0].startswith('200'):
+                self.data.append(json.loads(line))
 
     def __len__(self):
         return len(self.data)
@@ -49,10 +49,13 @@ class MyDataset(Dataset):
 
 
 class ValDataset(Dataset):
-    def __init__(self):
+    def __init__(self, dataset_name):
         self.data = []
-        # for ds in ['things', 'laion-art','cc3m']:
-        for ds in ['fill50k']:
+        if dataset_name == 'fill50k':
+            names = ['fill50k']
+        else:
+            names = ['things', 'laion-art', 'cc3m']
+        for ds in names:
             with open(os.path.join(ROOT, 'data/', ds, 'val_data.json'), 'rt') as f:
                 for line in f:
                     self.data.append(json.loads(line))
