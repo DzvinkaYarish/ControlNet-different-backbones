@@ -11,6 +11,7 @@ from annotator.util import HWC3, resize_image
 from aesthetics_predictor import AestheticsPredictor
 from functools import partial
 import cv2
+import time
 
 
 def apply_canny(img):
@@ -85,15 +86,20 @@ class ImageLogger(Callback):
                 pl_module.eval()
 
             all_images = []
+            sampling_times = []
             with torch.no_grad():
                 if self.val_dataloader:
                     for dl_batch in self.val_dataloader:
+                        s = time.time()
                         imgs = pl_module.log_images(dl_batch, split=split, **self.log_images_kwargs)
+                        sampling_times.append(time.time() - s)
                         imgs['ds_label'] = dl_batch['ds_label']
                         # imgs['target'] = dl_batch['jpg']
                         all_images.append(imgs)
                 else:
+                    s = time.time()
                     imgs = pl_module.log_images(batch, split=split, **self.log_images_kwargs)
+                    sampling_times.append(time.time() - s)
                     imgs['ds_label'] = ''
                     # imgs['target'] = batch['jpg']
                     all_images.append(imgs)
@@ -113,7 +119,7 @@ class ImageLogger(Callback):
                                pl_module.global_step, pl_module.current_epoch, i)
 
             # log metrics
-            metrics = {"clip_score": [], 'edge_rmse': [], 'delta_clip_score': [], 'aesthetics_score': []}
+            metrics = {"clip_score": [], 'edge_rmse': [], 'delta_clip_score': [], 'aesthetics_score': [], 'sampling_time': np.round(np.mean(sampling_times), 2)}
             if self.val_dataloader:
                 for i, dl_batch in enumerate(self.val_dataloader):
                     # all_images[i]['samples_cfg_scale_9.00'] returns torch tensor of 
@@ -141,3 +147,11 @@ class ImageLogger(Callback):
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         if not self.disabled:
             self.log_img(pl_module, batch, batch_idx, split="train")
+
+    def on_train_end(self, trainer, pl_module):
+        print('ON TRAIN END')
+        self.log_img(pl_module, None, 0, split="train")
+
+    def on_exception(self, trainer, pl_module, exception):
+        print('ON EXCEPTION')
+        self.log_img(pl_module, None, 0, split="train")
