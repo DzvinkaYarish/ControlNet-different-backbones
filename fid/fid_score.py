@@ -52,7 +52,7 @@ except ImportError:
     def tqdm(x):
         return x
 
-from pytorch_fid.inception import InceptionV3
+from .inception import InceptionV3
 
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('--batch-size', type=int, default=50,
@@ -91,6 +91,10 @@ class ImagePathDataset(torch.utils.data.Dataset):
         if self.transforms is not None:
             img = self.transforms(img)
         return img
+
+
+# Inception Network expects pixels to be in range from 0 to 1. 
+# The image size can be arbitrary, but the network will scale the image to 299, 299 during the forward pass
 
 
 def get_activations(files, model, batch_size=50, dims=2048, device='cpu',
@@ -133,6 +137,64 @@ def get_activations(files, model, batch_size=50, dims=2048, device='cpu',
     start_idx = 0
 
     for batch in tqdm(dataloader):
+        batch = batch.to(device)
+
+        with torch.no_grad():
+            pred = model(batch)[0]
+
+        # If model output is not scalar, apply global spatial average pooling.
+        # This happens if you choose a dimensionality not equal 2048.
+        if pred.size(2) != 1 or pred.size(3) != 1:
+            pred = adaptive_avg_pool2d(pred, output_size=(1, 1))
+
+        pred = pred.squeeze(3).squeeze(2).cpu().numpy()
+
+        pred_arr[start_idx:start_idx + pred.shape[0]] = pred
+
+        start_idx = start_idx + pred.shape[0]
+
+    return pred_arr
+
+
+def get_activations_images(images, model, batch_size=50, dims=2048, device='cpu', num_workers=1):
+    model.eval()
+
+    pred_arr = np.empty((len(images) ** 2, dims))
+
+    start_idx = 0
+
+    for batch in tqdm(images):
+        batch = batch['samples_cfg_scale_9.00'].float() / 255.0
+        batch = batch.to(device)
+        
+        with torch.no_grad():
+            pred = model(batch)[0]
+
+        # If model output is not scalar, apply global spatial average pooling.
+        # This happens if you choose a dimensionality not equal 2048.
+        if pred.size(2) != 1 or pred.size(3) != 1:
+            pred = adaptive_avg_pool2d(pred, output_size=(1, 1))
+
+        pred = pred.squeeze(3).squeeze(2).cpu().numpy()
+
+        pred_arr[start_idx:start_idx + pred.shape[0]] = pred
+
+        start_idx = start_idx + pred.shape[0]
+
+    return pred_arr
+
+
+def get_activations_val(val_dataloader, model, batch_size=50, dims=2048, device='cpu', num_workers=1):
+    model.eval()
+
+    pred_arr = np.empty((len(val_dataloader) ** 2, dims))
+
+    start_idx = 0
+
+    for batch in tqdm(val_dataloader):
+        batch = batch['jpg']
+        batch = (batch + 1.0) / 2.0  # target's pixel range is from -1 to 1 while we want it to be in range 0 to 1
+        batch = batch.permute(0, 3, 1, 2)
         batch = batch.to(device)
 
         with torch.no_grad():
@@ -234,6 +296,22 @@ def calculate_activation_statistics(files, model, batch_size=50, dims=2048,
     return mu, sigma
 
 
+def calculate_activation_statistics_images(images, model, batch_size=50, dims=2048,
+                                    device='cpu', num_workers=1):
+    act = get_activations_images(images, model, batch_size, dims, device, num_workers)
+    mu = np.mean(act, axis=0)
+    sigma = np.cov(act, rowvar=False)
+    return mu, sigma
+
+
+def calculate_activation_statistics_val(val_dataset, model, batch_size=50, dims=2048,
+                                    device='cpu', num_workers=1):
+    act = get_activations_val(val_dataset, model, batch_size, dims, device, num_workers)
+    mu = np.mean(act, axis=0)
+    sigma = np.cov(act, rowvar=False)
+    return mu, sigma
+
+
 def compute_statistics_of_path(path, model, batch_size, dims, device,
                                num_workers=1):
     if path.endswith('.npz'):
@@ -263,6 +341,20 @@ def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
                                         dims, device, num_workers)
     m2, s2 = compute_statistics_of_path(paths[1], model, batch_size,
                                         dims, device, num_workers)
+    fid_value = calculate_frechet_distance(m1, s1, m2, s2)
+
+    return fid_value
+
+
+def calculate_fid(generated_imgs, real_imgs_dataloader, batch_size, device, dims, num_workers=1):
+    block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
+
+    model = InceptionV3([block_idx]).to(device)
+
+    m1, s1 = calculate_activation_statistics_images(generated_imgs, model, batch_size, dims, device, num_workers)
+
+    m2, s2 = calculate_activation_statistics_val(real_imgs_dataloader, model, batch_size, dims, device, num_workers)
+
     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 
     return fid_value
