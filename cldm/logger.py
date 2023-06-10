@@ -56,7 +56,7 @@ class ImageLogger(Callback):
         self.target_clip_scores =  {'things': [], 'laion-art':[], 'CC3M':[]}
         for batch in self.val_dataloader:
             target = torch.Tensor((batch['jpg'] + 1.0) * 127.5).to(torch.uint8)
-            self.target_clip_scores[batch['ds_label']].append(calculate_clip_score(target, batch['txt']))
+            self.target_clip_scores[batch['ds_label'][0]].append(calculate_clip_score(target, batch['txt']))
 
     @rank_zero_only
     def log_local(self, split, images, global_step, current_epoch, batch_idx):
@@ -121,7 +121,7 @@ class ImageLogger(Callback):
                                pl_module.global_step, pl_module.current_epoch, i)
 
             # log metrics
-            metrics = {"clip_score": {'things': [], 'laion-art':[], 'CC3M':[]}, 'edge_rmse': [], 'delta_clip_score': {'things': [], 'laion-art':[], 'CC3M':[]}, 'aesthetics_score': [], 'sampling_time': np.round(np.mean(sampling_times), 2)}
+            metrics = {"clip_score": {'things': [], 'laion-art': [], 'CC3M':[]}, 'edge_rmse': [], 'delta_clip_score': {'things': [], 'laion-art':[], 'CC3M':[]}, 'aesthetics_score': [], 'sampling_time': np.round(np.mean(sampling_times), 2)}
             if self.val_dataloader:
                 for i, dl_batch in enumerate(self.val_dataloader):
                     # all_images[i]['samples_cfg_scale_9.00'] returns torch tensor of 
@@ -130,7 +130,7 @@ class ImageLogger(Callback):
                     # Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
                     # https://github.com/openai/CLIP/blob/main/clip/clip.py
                     metrics['aesthetics_score'].append(np.mean(self.aesthetics_predictor.inference(all_images[i]['samples_cfg_scale_9.00'].float() / 255.0).cpu().detach().numpy()))
-                    metrics['clip_score'][dl_batch['ds_label']].append(calculate_clip_score(all_images[i]['samples_cfg_scale_9.00'], dl_batch['txt']))
+                    metrics['clip_score'][dl_batch['ds_label'][0]].append(calculate_clip_score(all_images[i]['samples_cfg_scale_9.00'], dl_batch['txt']))
                     # TODO canny is hardcoded here but we might use other conditions in the future
                     generated_edges = np.array([HWC3(apply_canny(img.permute(1,2,0).numpy())) for img in all_images[i]['samples_cfg_scale_9.00']])
                     metrics['edge_rmse'].append(rmse(generated_edges, dl_batch['hint'].numpy()))
