@@ -136,7 +136,7 @@ class ImageLogger(Callback):
                     metrics['edge_rmse'].append(rmse(generated_edges, dl_batch['hint'].numpy()))
 
                 for ds_l in ['things', 'laion-art','CC3M']:
-                    metrics['delta_clip_score'][ds_l] = np.mean(np.concatenate(metrics['clip_score']['ds_l']) - np.concatenate(self.target_clip_scores['ds_l']))
+                    metrics['delta_clip_score'][ds_l] = np.mean(np.concatenate(metrics['clip_score'][ds_l]) - np.concatenate(self.target_clip_scores[ds_l]))
                     metrics[f'delta_clip_score_{ds_l}'] = metrics['delta_clip_score'][ds_l]
                     del metrics['delta_clip_score'][ds_l]
 
