@@ -20,7 +20,7 @@ r_indx = np.random.randint(0, len(list_of_files), 64)
 list_of_files = [list_of_files[i] for i in r_indx]
 list_of_prompts = [list_of_prompts[i] for i in r_indx]
 
-with open(os.path.join(ROOT, 'data/CC3M/val_data_test.json'), 'wt') as f:
+with open(os.path.join(ROOT, 'data/CC3M/val_data.json'), 'wt') as f:
     for i in range(len(list_of_files)):
         with open(list_of_prompts[i], 'r') as p:
             prompt = p.readline().strip()
