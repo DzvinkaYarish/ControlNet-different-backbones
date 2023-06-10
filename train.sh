@@ -19,8 +19,8 @@ gcc --version
 
 #/gpfs/space/home/dzvenymy/.conda/envs/controlnet/bin/python tool_add_control.py /gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/models/v1-5-pruned.ckpt /gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/models/control_lite_ini.ckpt
 
-/gpfs/space/home/dzvenymy/.conda/envs/controlnet/bin/python tutorial_train.py --max_steps 5000 --experiment_name fillin50k_mlp_fixed_steps --logger_freq 100
-/gpfs/space/home/dzvenymy/.conda/envs/controlnet/bin/python tutorial_train.py --max_time 00:2:00:00 --experiment_name fillin50k_mlp_fixed_time --logger_freq 500
+# /gpfs/space/home/dzvenymy/.conda/envs/controlnet/bin/python tutorial_train.py --max_steps 5000 --experiment_name fillin50k_mlp_fixed_steps --logger_freq 100
+# /gpfs/space/home/dzvenymy/.conda/envs/controlnet/bin/python tutorial_train.py --max_time 00:2:00:00 --experiment_name fillin50k_mlp_fixed_time --logger_freq 500
 
 
-#/gpfs/space/home/zaliznyi/miniconda3/envs/controlnet/bin/python tutorial_train.py
+/gpfs/space/home/zaliznyi/miniconda3/envs/controlnet/bin/python tutorial_train.py --max_steps 5000 --experiment_name fillin50k_mlp_fixed_steps --logger_freq 1 --logger_dir /gpfs/space/home/zaliznyi/wandb

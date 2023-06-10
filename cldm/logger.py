@@ -9,6 +9,7 @@ from pytorch_lightning.utilities.distributed import rank_zero_only
 from torchmetrics.functional.multimodal import clip_score
 from annotator.util import HWC3, resize_image
 from aesthetics_predictor import AestheticsPredictor
+from fid import fid_score
 from functools import partial
 import cv2
 import time
@@ -129,6 +130,7 @@ class ImageLogger(Callback):
                     # https://github.com/openai/CLIP/blob/main/clip/clip.py
                     metrics['aesthetics_score'].append(np.mean(self.aesthetics_predictor.inference(all_images[i]['samples_cfg_scale_9.00'].float() / 255.0).cpu().detach().numpy()))
                     metrics['clip_score'].append(calculate_clip_score(all_images[i]['samples_cfg_scale_9.00'], dl_batch['txt']))
+                    # TODO canny is hardcoded here but we might use other conditions in the future
                     generated_edges = np.array([HWC3(apply_canny(img.permute(1,2,0).numpy())) for img in all_images[i]['samples_cfg_scale_9.00']])
                     metrics['edge_rmse'].append(rmse(generated_edges, dl_batch['hint'].numpy()))
 
@@ -136,6 +138,8 @@ class ImageLogger(Callback):
                 metrics['clip_score'] = np.mean(metrics['clip_score'])
                 metrics['edge_rmse'] = np.mean(metrics['edge_rmse'])
                 metrics['aesthetics_score'] = np.mean(metrics['aesthetics_score'])
+                metrics['fid_score'] = fid_score.calculate_fid(all_images, self.val_dataloader, batch_size=32, 
+                    device='cuda' if torch.cuda.is_available() else 'cpu', dims=2048, num_workers=4)
                 pl_module.logger.log_metrics(metrics, step=pl_module.global_step)
 
             if is_train:
