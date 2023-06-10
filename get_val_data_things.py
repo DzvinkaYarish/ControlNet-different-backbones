@@ -31,7 +31,7 @@ apply_canny = CannyDetector()
 for i in range(len(list_of_files)):
     object = list_of_files[i].split('/')[-2]
     target = cv2.imread(list_of_files[i])
-    target = resize_image(target, (256, 256))
+    target = resize_image(target, 256)
     detected_map = apply_canny(target, 100, 200)
     Image.fromarray(detected_map).save(list_of_files[i].replace(object, 'edges'))
     # detected_map = HWC3(detected_map)
