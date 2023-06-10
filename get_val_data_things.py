@@ -22,7 +22,7 @@ list_of_files = [list_of_files[i] for i in r_indx]
 with open(os.path.join(ROOT, 'data/things/val_data.json'), 'wt') as f:
     for i in range(len(list_of_files)):
         object = list_of_files[i].split('/')[-2]
-        f.write(json.dumps({'source': list_of_files[i].replace(object, 'images'), 'target': list_of_files[i].replace(object, 'edges'), 'prompt': object, 'ds_label': 'things'}) + '\n')
+        f.write(json.dumps({'target': list_of_files[i].replace(object, 'images'), 'source': list_of_files[i].replace(object, 'edges'), 'prompt': object, 'ds_label': 'things'}) + '\n')
 
 
 os.makedirs(os.path.join(ROOT, 'data/things/edges/'), exist_ok=True)
