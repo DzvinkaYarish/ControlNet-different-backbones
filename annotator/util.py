@@ -37,3 +37,12 @@ def resize_image(input_image, resolution):
     W = int(np.round(W / 64.0)) * 64
     img = cv2.resize(input_image, (W, H), interpolation=cv2.INTER_LANCZOS4 if k > 1 else cv2.INTER_AREA)
     return img
+
+def resize_image_square(input_image, resolution):
+    H, W, C = input_image.shape
+    H, W = min(H, W), min(H, W)
+    H = float(H)
+    W = float(W)
+    k = float(resolution) / min(H, W)
+    img = cv2.resize(input_image, (resolution, resolution), interpolation=cv2.INTER_LANCZOS4 if k > 1 else cv2.INTER_AREA)
+    return img

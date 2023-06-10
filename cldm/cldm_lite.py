@@ -47,6 +47,33 @@ class ControlledLiteUnetModel(UNetModel):
         return self.out(h)
 
 
+class ControlledLiteDecoderUnetModel(UNetModel):
+    def forward(self, x, timesteps=None, context=None, control=None, only_mid_control=False, **kwargs):
+        hs = []
+        with torch.no_grad():
+            t_emb = timestep_embedding(timesteps, self.model_channels, repeat_only=False)
+            emb = self.time_embed(t_emb)
+            h = x.type(self.dtype)
+            for module in self.input_blocks:
+                h = module(h, emb, context)
+                hs.append(h)
+            h = self.middle_block(h, emb, context)
+
+        if control is not None:
+            h += control.pop()
+
+        input_layers_indx_to_add = [0,5,8,9]
+        for i, module in enumerate(self.output_blocks):
+            if not  only_mid_control and control is not None and i in input_layers_indx_to_add:
+                h = torch.cat([h, hs.pop() + control.pop()], dim=1)
+            else:
+                h = torch.cat([h, hs.pop()], dim=1)
+            h = module(h, emb, context)
+
+        h = h.type(x.dtype)
+        return self.out(h)
+
+
 class ControlLiteNet(nn.Module):
     def __init__(
             self,
@@ -78,6 +105,7 @@ class ControlLiteNet(nn.Module):
             disable_middle_self_attn=False,
             use_linear_in_transformer=False,
             control_type='mlp',
+            use_diffusion_input=False
     ):
         super().__init__()
         if use_spatial_transformer:
@@ -131,6 +159,7 @@ class ControlLiteNet(nn.Module):
         self.num_heads_upsample = num_heads_upsample # 8
         self.predict_codebook_ids = n_embed is not None
         self.control_type = control_type
+        self.use_diffusion_input = use_diffusion_input
 
         time_embed_dim = model_channels * 4  # 1280
         self.time_embed = nn.Sequential(
@@ -158,8 +187,19 @@ class ControlLiteNet(nn.Module):
         )
 
         self._feature_size = self.model_channels
-        self.input_blocks_control = nn.ModuleList([])
-        self.zero_convs = nn.ModuleList([])
+
+        if use_diffusion_input:
+            self.input_blocks_control = nn.ModuleList(
+                [
+                    TimestepEmbedSequential(
+                        conv_nd(dims, in_channels, model_channels, 3, padding=1)
+                    )
+                ]
+            )
+            self.zero_convs = nn.ModuleList([self.make_zero_conv(model_channels)])
+        else:
+            self.input_blocks_control = nn.ModuleList([])
+            self.zero_convs = nn.ModuleList([])
 
         if self.control_type == 'mlp':
             self.init_mlp_2()
@@ -244,11 +284,19 @@ class ControlLiteNet(nn.Module):
 
         guided_hint = self.input_hint_block(hint, emb, context)
 
-        outs = [guided_hint]
+        if self.use_diffusion_input:
+            h = x.type(self.dtype)
+            outs = []
+        else:
+            outs = [guided_hint]
+            h = guided_hint
+            guided_hint = None
 
-        h = guided_hint
         for i, (module, zero_conv) in enumerate(zip(self.input_blocks_control, self.zero_convs)):
             h = module(h, emb, context)
+            if guided_hint is not None:
+                h = h + guided_hint
+                guided_hint = None
             outs.append(zero_conv(h, emb, context))
 
         return outs

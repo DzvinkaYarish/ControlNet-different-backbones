@@ -5,10 +5,10 @@ import numpy as np
 from torch.utils.data import Dataset
 
 import os
-from annotator.util import HWC3, resize_image
+from annotator.util import HWC3, resize_image, resize_image_square
 
 ROOT = "/gpfs/space/projects/stud_ml_22/ControlNet-different-backbones/"
-#ROOT = "./"
+# ROOT = "./"
 
 class Fill50kDataset(Dataset):
     def __init__(self):
@@ -54,7 +54,7 @@ class ValDataset(Dataset):
         if dataset_name == 'fill50k':
             names = ['fill50k']
         else:
-            names = ['things', 'laion-art', 'cc3m']
+            names = ['things', 'laion-art', 'CC3M']
         for ds in names:
             with open(os.path.join(ROOT, 'data/', ds, 'val_data.json'), 'rt') as f:
                 for line in f:
@@ -68,14 +68,15 @@ class ValDataset(Dataset):
 
         source_path = item['source']
         target_path = item['target']
-        prompt = item['prompt']
+        prompt = item['prompt'][:77]
         ds_label = item['ds_label']
+
 
         source = cv2.imread(source_path)
         target = cv2.imread(target_path)
 
-        source = resize_image(source, 256)
-        target = resize_image(target, 256)
+        source = resize_image_square(source, 256)
+        target = resize_image_square(target, 256)
 
         # Do not forget that OpenCV read images in BGR order.
         source = cv2.cvtColor(source, cv2.COLOR_BGR2RGB)

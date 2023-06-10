@@ -21,6 +21,7 @@ clip_score_fn = partial(clip_score, model_name_or_path="openai/clip-vit-base-pat
 
 
 def calculate_clip_score(images, prompts):
+    print(prompts)
     clip_score = clip_score_fn(images, prompts).detach()
     clip_score = np.array([np.round((clip_score.numpy()), 4)])
     return clip_score

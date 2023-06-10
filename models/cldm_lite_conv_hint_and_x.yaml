@@ -36,7 +36,7 @@ model:
         use_checkpoint: True
         legacy: False
         control_type: 'conv'
-        use_diffusion_input: False
+        use_diffusion_input: True
 
     unet_config:
       target: cldm.cldm_lite.ControlledLiteUnetModel

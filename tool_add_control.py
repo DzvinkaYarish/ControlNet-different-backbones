@@ -26,8 +26,8 @@ def get_node_name(name, parent_name):
     return True, name[len(parent_name):]
 
 
-#model = create_model(config_path='./models/cldm_lite.yaml')
-model = create_model(config_path='./models/cldm_v15.yaml')
+#model = create_model(config_path='./models/cldm_lite_mlp.yaml')
+model = create_model(config_path='./models/cldm_lite_conv.yaml')
 
 pretrained_weights = torch.load(input_path)
 if 'state_dict' in pretrained_weights:
