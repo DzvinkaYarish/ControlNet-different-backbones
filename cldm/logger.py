@@ -147,8 +147,11 @@ class ImageLogger(Callback):
 
                 metrics['edge_rmse'] = np.mean(metrics['edge_rmse'])
                 metrics['aesthetics_score'] = np.mean(metrics['aesthetics_score'])
-                metrics['fid_score'] = fid_score.calculate_fid(all_images, self.val_dataloader, batch_size=32, 
-                    device='cuda' if torch.cuda.is_available() else 'cpu', dims=2048, num_workers=4)
+                try:  # sometimes the calculation fails with "sqrtm: array must not contain infs or NaNs"
+                    metrics['fid_score'] = fid_score.calculate_fid(all_images, self.val_dataloader, batch_size=32, 
+                        device='cuda' if torch.cuda.is_available() else 'cpu', dims=2048, num_workers=4)
+                except:
+                    pass
                 pl_module.logger.log_metrics(metrics, step=pl_module.global_step)
 
             if is_train:

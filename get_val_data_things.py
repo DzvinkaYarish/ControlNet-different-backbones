@@ -21,20 +21,23 @@ list_of_files = [list_of_files[i] for i in r_indx]
 
 with open(os.path.join(ROOT, 'data/things/val_data.json'), 'wt') as f:
     for i in range(len(list_of_files)):
-        object = list_of_files[i].split('/')[-2]
-        f.write(json.dumps({'target': list_of_files[i].replace(object, 'images'), 'source': list_of_files[i].replace(object, 'edges'), 'prompt': object, 'ds_label': 'things'}) + '\n')
+        object_name = list_of_files[i].split('/')[-2]
+        f.write(json.dumps({'target': list_of_files[i].replace(object_name, 'images'), 'source': list_of_files[i].replace(object_name, 'edges'), 'prompt': object_name, 'ds_label': 'things'}) + '\n')
 
 
 os.makedirs(os.path.join(ROOT, 'data/things/edges/'), exist_ok=True)
 apply_canny = CannyDetector()
 
 for i in range(len(list_of_files)):
-    object = list_of_files[i].split('/')[-2]
+    object_name = list_of_files[i].split('/')[-2]
     target = cv2.imread(list_of_files[i])
     target = resize_image(target, 256)
     detected_map = apply_canny(target, 100, 200)
-    Image.fromarray(detected_map).save(list_of_files[i].replace(object, 'edges'))
+    Image.fromarray(detected_map).save(list_of_files[i].replace(object_name, 'edges'))
     # detected_map = HWC3(detected_map)
+
+    Image.fromarray(target).save(list_of_files[i].replace(object_name, 'images'))
+
 
 
 
