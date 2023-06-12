@@ -183,7 +183,9 @@ class ControlLiteNet(nn.Module):
             nn.SiLU(),
             conv_nd(dims, 96, 256, 3, padding=1, stride=2),
             nn.SiLU(),
-            zero_module(conv_nd(dims, 256, model_channels, 3, padding=1))
+            # zero_module(conv_nd(dims, 256, model_channels, 3, padding=1))
+           conv_nd(dims, 256, model_channels, 3, padding=1)
+
         )
 
         self._feature_size = self.model_channels
